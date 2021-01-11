@@ -368,7 +368,7 @@ class MainScreen extends Component {
               {(props) =>
                 <StyleProvider style={getTheme(this.state.theme === 'dark' ? materialDark : material)}>
 
-                  <Chat {...props} data={tempObj} changeTemp={this.changeTemp} category={this.state.category} />
+                  <Chat {...props} data={tempObj} changeTemp={this.changeTemp} functions={this.handleAddItem} category={this.state.category} />
                 </StyleProvider>}
             </Stack.Screen>
 

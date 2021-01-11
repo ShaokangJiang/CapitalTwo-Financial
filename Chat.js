@@ -21,7 +21,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 window.process.hrtime = function () { return 0 }
 
-import { NlpManager } from 'node-nlp-rn';
+import { NlpManager, ConversationContext } from 'node-nlp-rn';
 import { containerBootstrap } from '@nlpjs/core';
 import { requestfs } from '@nlpjs/request-rn';
 
@@ -914,11 +914,18 @@ const corpus = [
 ];
 
 var UniqueID = 1;
+let remains = ["date", "income", "description", "category", "amount", "title"]
 
 let GlobalTheme;
 
 let count = 0;
 let finished = false;
+
+let information = {};
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
+}
 
 
 class MainScreen extends Component {
@@ -930,7 +937,7 @@ class MainScreen extends Component {
             messages: [
                 {
                     _id: UniqueID++,
-                    text: 'Hello, say something to add info',
+                    text: 'Hello, say something to add info, I will ask you any missing information',
                     createdAt: new Date(),
                     user: {
                         _id: 2,
@@ -943,7 +950,7 @@ class MainScreen extends Component {
             recording: undefined,
             manager: undefined,
             switcher: false,
-            information: {}
+            context: undefined
         }
         this.setRecording = this.setRecording.bind(this)
     }
@@ -1073,6 +1080,7 @@ class MainScreen extends Component {
         })
         this.setState({ theme: Appearance.getColorScheme(), loading: false });
 
+        information = {};
         GlobalTheme = Appearance.getColorScheme();
 
         const manager = new NlpManager({ languages: ['en'], forceNER: true });
@@ -1095,6 +1103,7 @@ class MainScreen extends Component {
         // Train and save the model.
         manager.settings.autoSave = false;
         this.handleAddContent(manager);
+        const context = new ConversationContext();
 
         await manager.train();
 
@@ -1102,31 +1111,90 @@ class MainScreen extends Component {
         //console.log(a)
         if (a) {
             UniqueID = a.length + 1
-            this.setState({ messages: a, manager: manager })
+            this.setState({ context: context, messages: a, manager: manager })
         }
-        this.setState({ manager: manager })
+        this.setState({ context: context, manager: manager })
         // await this.startRecording();
 
-
+        this.handleChange("description", "")
     }
 
     async addMessage(content) {
         let a = content.concat(this.state.messages);
         this.setState({ messages: a });
         for (let i of content) {
-            a = (await this.generateMessage(i.text)).concat(a);
+            this.handleChange("description", information.description = information.description + "\nYou: " + i.text)
+            a = (await this.generateMessage(i.text, content)).concat(a);
         }
         this.setState({ messages: a });
     }
 
-    async generateMessage(input) {
+
+    async generateMessage(input, source) {
         //console.log(this.state.switcher)
         let message = [];
-        const response = await this.state.manager.process(lang, input);
+        const response = await this.state.manager.process(lang, input, this.state.context);
+
+
+
+        // this.props.changeTemp('date', this.state.date);//Date object
+
+        // this.props.changeTemp("income", "Income");//intent
+
+
+        // this.props.changeTemp("category", this.props.category.Income[0]);
+
+        // this.props.changeTemp("amount", parseFloat(event.nativeEvent.text))
+
+
+
+        // this.props.changeTemp("title", k.Title);
+
+        // this.props.changeTemp("description", "   ");
+
+
+        let entities = []
+        for (let i of response.entities) {
+            entities.push(this.handleEntity(i, response.intent))
+        }
+
+        //update category
+        if (information.hasOwnProperty("income") && information.hasOwnProperty("date")) {
+            this.handleChange("title", (information.income ? "Income" : "Expense") + " at " + information.date.toLocaleString())
+        }
+
+        //once done
+        if (Object.keys(information).length >= 6) {
+            let a = source.concat(this.state.messages);
+            message.push({
+                _id: UniqueID++,
+                text: "All information is added, direct you back to home screen soon",
+                createdAt: new Date(),
+                user: {
+                    _id: 2,
+                    name: 'Robot'
+                },
+            })
+            a = message.concat(a);
+            this.setState({ messages: a });
+
+            this.handleChange("description", information.description = information.description + "\nR: " + "All information is added, direct you back to home screen soon")
+            this.props.functions(this.props.navigation)
+        }
+
+        let toReply = "";
+
+        if (response.intent.includes("income")) {
+            toReply = "An income is detected " + this.concatEntity(entities);
+        } else if (response.intent.includes("expense")) {
+            toReply = "An expense is detected " + this.concatEntity(entities);
+        } else {
+            toReply = response.answer + "\n" + this.concatEntity(entities);
+        }
 
         message.push({
             _id: UniqueID++,
-            text: response.answer,
+            text: toReply,
             createdAt: new Date(),
             user: {
                 _id: 2,
@@ -1134,38 +1202,149 @@ class MainScreen extends Component {
             },
         })
 
+        this.handleChange("description", information.description = information.description + "\nR: " + toReply)
+
+        for (let i of remains) {
+            if (information.hasOwnProperty(i)) remains.splice(remains.indexOf(i), 1)
+        }
+
+        let remainReply = "I still need more information, " + this.handleRemaining();
+
+        message.push({
+            _id: UniqueID++,
+            text: remainReply,
+            createdAt: new Date(),
+            user: {
+                _id: 2,
+                name: 'Robot'
+            },
+        })
+
+        this.handleChange("description", information.description = information.description + "\nR: " + remainReply)s
 
         return message
     }
 
-    generateRelationship(SourceObj) {
+    // this.props.changeTemp('date', this.state.date);//Date object
+
+    // this.props.changeTemp("income", "Income");//intent
+
+
+    // this.props.changeTemp("category", this.props.category.Income[0]);
+
+    // this.props.changeTemp("amount", parseFloat(event.nativeEvent.text))
+    handleRemaining() {
+        let infoCase = remains[getRandomInt(remains.length)]
+        while (infoCase.includes("title")) infoCase = remains[getRandomInt(remains.length)]
+        switch (infoCase) {
+            case "date":
+                if (Math.random() < 0.3)
+                    return "Any info about date?"
+                else if (Math.random() < 0.5)
+                    return "Tell me more about the date?"
+                else
+                    return "When does it happen?"
+            case "income":
+                if (Math.random() < 0.3)
+                    return "Did you earn or spend any money?"
+                else if (Math.random() < 0.5)
+                    return "Is it your income?"
+                else
+                    return "Does this belong to income?"
+            case "category":
+                if (information.hasOwnProperty("income")) {
+                    return "Which category does this belong to? you may choose in " + information.income ? this.props.category.Income.toString() : this.props.category.Expense.toString()
+                } else {
+                    if (Math.random() < 0.3)
+                        return "Did you earn or spend any money?"
+                    else if (Math.random() < 0.5)
+                        return "Is it your income?"
+                    else
+                        return "Does this belong to income?"
+                }
+            case "amount":
+                if (information.hasOwnProperty("income")) {
+                    return information.income ? "How much did you earned?" : "How much did you spent?"
+                } else {
+                    if (Math.random() < 0.3)
+                        return "Did you earn or spend any money?"
+                    else if (Math.random() < 0.5)
+                        return "Is it your income?"
+                    else
+                        return "Does this belong to income?"
+                }
+            default:
+                return "Dead end!"
+        }
+    }
+
+    concatEntity(entities) {
+        let toRe = "";
+        for (let i of entities) {
+            if (i) toRe += i + " "
+        }
+        return toRe;
+    }
+
+
+    // this.props.changeTemp('date', this.state.date);//Date object
+
+    // this.props.changeTemp("income", "Income");//intent
+
+    // this.props.changeTemp("description", "   ");
+
+    // this.props.changeTemp("category", this.props.category.Income[0]);
+
+    // this.props.changeTemp("amount", parseFloat(event.nativeEvent.text))
+
+    // this.props.changeTemp("title", k.Title);
+    handleEntity(SourceObj, intentName) {
         switch (SourceObj.entity) {
-            case "number":
-                return SourceObj.resolution.subtype + ";" + SourceObj.resolution.value
-            case "ip":
-                return SourceObj.resolution.value + ";" + SourceObj.resolution.type
-            case "percentage":
-                return SourceObj.resolution.strValue
-            case "dimension":
-            case "age":
             case "currency":
-                return SourceObj.resolution.value + " " + SourceObj.resolution.localeUnit
+                this.handleChange("amount", SourceObj.resolution.value)
+                return SourceObj.resolution.value + " " + SourceObj.resolution.localeUnit + " added to current item"
             case "date":
                 switch (SourceObj.resolution.type) {
                     case "date":
-                        return SourceObj.resolution.strValue
+                        this.handleChange('date', new Date(SourceObj.resolution.strValue))
+                        return "Date " + SourceObj.resolution.strValue + " added to current item"
                     default:
-                        return SourceObj.resolution.timex
+                        return null;
                 }
-            case "duration":
-                return SourceObj.resolution.values[0].timex + ":" + SourceObj.resolution.values[0].value + " Seconds"
             case "datetime":
-                return SourceObj.resolution.values[0].value
-
+                this.handleChange('date', new Date(SourceObj.resolution.values[0].value))
+                return "Date " + SourceObj.resolution.values[0].value + " added to current item"
+            case "categoryIncome":
+                if (intentName.includes("income")) {
+                    this.handleChange('income', true)
+                    this.handleChange('category', SourceObj.option)
+                    return "it belongs to category" + SourceObj.option;
+                } else if (information.income) {
+                    this.handleChange('category', SourceObj.option)
+                    return "it belongs to category" + SourceObj.option;
+                }
+                return null;
+            case "categoryExpense":
+                if (intentName.includes("expense")) {
+                    this.handleChange('income', true)
+                    this.handleChange('category', SourceObj.option)
+                    return "it belongs to category" + SourceObj.option;
+                } else if (!information.income) {
+                    this.handleChange('category', SourceObj.option)
+                    return "it belongs to category" + SourceObj.option;
+                }
+                return null;
             default:
-                return SourceObj.resolution.value
+                return null;
         }
     }
+
+    handleChange(key, value) {
+        information[key] = value;
+        this.props.changeTemp(key, value);
+    }
+
+
 
     handleAddContent(manager) {
         for (let i of corpus) {
@@ -1177,18 +1356,49 @@ class MainScreen extends Component {
             }
         }
 
-        manager.addNamedEntityText(
-            'hero',
-            'spiderman',
-            ['en'],
-            ['Spiderman', 'Spider-man'],
-        );
-        manager.addNamedEntityText(
-            'hero',
-            'iron man',
-            ['en'],
-            ['iron man', 'iron-man'],
-        );
+        // let categories = {
+        //     "Income": ["Salary"],
+        //     "Expense": ["Normal", "Emergent"]
+        //   };
+
+        for (let i of this.props.category.Income) {
+            manager.addNamedEntityText(
+                'categoryIncome',
+                i,
+                [lang],
+                [i, i.toLowerCase()],
+            );
+        }
+
+        for (let i of this.props.category.Expense) {
+            manager.addNamedEntityText(
+                'categoryExpense',
+                i,
+                [lang],
+                [i, i.toLowerCase()],
+            );
+        }
+
+
+        manager.addDocument(lang, 'I earned %currency% %date%', 'agent.income');
+        manager.addDocument(lang, 'I earned ', 'agent.income');
+        manager.addDocument(lang, 'It belongs to income', 'agent.income');
+        manager.addDocument(lang, 'It is in income', 'agent.income');
+        manager.addDocument(lang, '%currency% belongs to me', 'agent.expense');
+        manager.addDocument(lang, 'income', 'agent.income');
+
+        manager.addAnswer(lang, 'agent.income', "SPECIAL");
+
+        manager.addDocument(lang, 'I spend %currency% %date%', 'agent.expense');
+        manager.addDocument(lang, 'I spend ', 'agent.expense');
+        manager.addDocument(lang, '%currency% was wasted', 'agent.expense');
+        manager.addDocument(lang, '%currency% was used', 'agent.expense');
+        manager.addDocument(lang, 'It is in expense', 'agent.expense');
+        manager.addDocument(lang, 'It belongs to expense', 'agent.expense');
+        manager.addDocument(lang, 'expense', 'agent.expense');
+
+        manager.addAnswer(lang, 'agent.expense', "SPECIAL");
+
     }
 
     render() {
