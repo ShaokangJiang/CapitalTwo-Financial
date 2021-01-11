@@ -1220,7 +1220,7 @@ class MainScreen extends Component {
             },
         })
 
-        this.handleChange("description", information.description = information.description + "\nR: " + remainReply)s
+        this.handleChange("description", information.description = information.description + "\nR: " + remainReply)
 
         return message
     }
