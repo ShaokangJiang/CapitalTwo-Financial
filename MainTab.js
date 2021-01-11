@@ -62,7 +62,7 @@ export default class MainScreen extends Component {
         } else {
             let tmp = this.props.deletion;
             tmp.splice(tmp.indexOf(id), 1);
-            if (tmp.length > 0){
+            if (tmp.length > 0) {
                 this.props.setDeletion(tmp);
             }
             else {
@@ -91,36 +91,36 @@ export default class MainScreen extends Component {
             }
             for (let k of Object.values(this.props.data[i])) {
                 if (this.props.category.localeCompare(k.Category) === 0)
-                re.push(
-                    <ListItem noIndent thumbnail key={id++} button onPress={() => {
-                        if (this.props.delete) {
-                            this.deletion(k.id)
-                        } else {
-                            this.props.changeIDtemp(k.id);
-                            this.props.changeTemp("title", k.Title);
-                            this.props.changeTemp("income", k.Income ? "Income" : "Expense");
-                            this.props.changeTemp("category", k.Category);
-                            this.props.changeTemp('date', i);
-                            this.props.changeTemp("amount", k.Amount)
-                            this.props.changeTemp("description", k.Description);
-                            this.props.navigation.navigate("Edit")
-                        }
-                    }} onLongPress={() => {
-                        if (!this.props.delete) {
-                            initialize = true;
-                            this.deletion(k.id);
-                        }
-                    }}>
-                        {this.props.delete ? (
-                            <Left style={{ marginLeft: -20, marginRight: -20 }}><CheckBox checked={this.props.deletion.indexOf(k.id) !== -1} onPress={() => { this.deletion(k.id) }} /></Left>
-                        ) : <Left style={{ marginLeft: -20 }}></Left>}
-                        <Body >
-                            <Text>{this.truncate(k.Title) + "  "}<Text style={k.Income ? { color: 'red' } : { color: 'green' }}>{(k.Income ? "+" : "-") + k.Amount}</Text></Text>
-                            <Text note>{this.truncateContent(k.Description)}</Text>
-                        </Body>
-                        <Right><Icon name="arrow-forward" /></Right>
-                    </ListItem>
-                );
+                    re.push(
+                        <ListItem noIndent thumbnail key={id++} button onPress={() => {
+                            if (this.props.delete) {
+                                this.deletion(k.id)
+                            } else {
+                                this.props.changeIDtemp(k.id);
+                                this.props.changeTemp("title", k.Title);
+                                this.props.changeTemp("income", k.Income ? "Income" : "Expense");
+                                this.props.changeTemp("category", k.Category);
+                                this.props.changeTemp('date', i);
+                                this.props.changeTemp("amount", k.Amount)
+                                this.props.changeTemp("description", k.Description);
+                                this.props.navigation.navigate("Edit")
+                            }
+                        }} onLongPress={() => {
+                            if (!this.props.delete) {
+                                initialize = true;
+                                this.deletion(k.id);
+                            }
+                        }}>
+                            {this.props.delete ? (
+                                <Left style={{ marginLeft: -20, marginRight: -20 }}><CheckBox checked={this.props.deletion.indexOf(k.id) !== -1} onPress={() => { this.deletion(k.id) }} /></Left>
+                            ) : <Left style={{ marginLeft: -20 }}></Left>}
+                            <Body >
+                                <Text>{this.truncate(k.Title) + "  "}<Text style={k.Income ? { color: 'red' } : { color: 'green' }}>{(k.Income ? "+" : "-") + k.Amount}</Text></Text>
+                                <Text note>{this.truncateContent(k.Description)}</Text>
+                            </Body>
+                            <Right><Icon name="arrow-forward" /></Right>
+                        </ListItem>
+                    );
             }
         }
         return re;
@@ -139,32 +139,32 @@ export default class MainScreen extends Component {
     render() {
         return (
 
-                <Container>
-                    <Content>
-                        <List>
-                            {this.getItems()}
-                        </List>
-                    </Content>
+            <Container>
+                <Content>
+                    <List>
+                        {this.getItems()}
+                    </List>
+                </Content>
 
-                    <Fab
-                        active={this.state.active}
-                        direction="up"
-                        containerStyle={{}}
-                        style={{ backgroundColor: '#5067FF' }}
-                        position="bottomRight"
-                        onPress={() => this.setState({ active: !this.state.active })}>
-                        <Icon type="MaterialIcons" name='add' />
-                        <Button style={{ backgroundColor: '#34A34F' }} onPress={() => { this.props.navigation.navigate("Add") }}>
-                            <Icon type="MaterialIcons" name='note' />
-                        </Button>
-                        <Button style={{ backgroundColor: '#3B5998' }}>
-                            <Icon type="MaterialIcons" name='mic-none' />
-                        </Button>
-                        <Button disabled style={{ backgroundColor: '#DD5144' }}>
-                            <Icon type="MaterialIcons" name='camera-alt' />
-                        </Button>
-                    </Fab>
-                </Container>
+                <Fab
+                    active={this.state.active}
+                    direction="up"
+                    containerStyle={{}}
+                    style={{ backgroundColor: '#5067FF' }}
+                    position="bottomRight"
+                    onPress={() => this.setState({ active: !this.state.active })}>
+                    <Icon type="MaterialIcons" name='add' />
+                    <Button style={{ backgroundColor: '#34A34F' }} onPress={() => { this.props.navigation.navigate("Add") }}>
+                        <Icon type="MaterialIcons" name='note' />
+                    </Button>
+                    <Button style={{ backgroundColor: '#3B5998' }} onPress={() => { this.props.navigation.navigate("Chat") }}>
+                        <Icon type="MaterialIcons" name='mic-none' />
+                    </Button>
+                    <Button disabled style={{ backgroundColor: '#DD5144' }}>
+                        <Icon type="MaterialIcons" name='camera-alt' />
+                    </Button>
+                </Fab>
+            </Container>
 
         );
     }

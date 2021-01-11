@@ -62,7 +62,7 @@ export default class MainScreen extends Component {
         } else {
             let tmp = this.props.deletion;
             tmp.splice(tmp.indexOf(id), 1);
-            if (tmp.length > 0){
+            if (tmp.length > 0) {
                 this.props.setDeletion(tmp);
             }
             else {
@@ -138,32 +138,32 @@ export default class MainScreen extends Component {
     render() {
         return (
 
-                <Container>
-                    <Content>
-                        <List>
-                            {this.getItems()}
-                        </List>
-                    </Content>
+            <Container>
+                <Content>
+                    <List>
+                        {this.getItems()}
+                    </List>
+                </Content>
 
-                    <Fab
-                        active={this.state.active}
-                        direction="up"
-                        containerStyle={{}}
-                        style={{ backgroundColor: '#5067FF' }}
-                        position="bottomRight"
-                        onPress={() => this.setState({ active: !this.state.active })}>
-                        <Icon type="MaterialIcons" name='add' />
-                        <Button style={{ backgroundColor: '#34A34F' }} onPress={() => { this.props.navigation.navigate("Add") }}>
-                            <Icon type="MaterialIcons" name='note' />
-                        </Button>
-                        <Button style={{ backgroundColor: '#3B5998' }}>
-                            <Icon type="MaterialIcons" name='mic-none' />
-                        </Button>
-                        <Button disabled style={{ backgroundColor: '#DD5144' }}>
-                            <Icon type="MaterialIcons" name='camera-alt' />
-                        </Button>
-                    </Fab>
-                </Container>
+                <Fab
+                    active={this.state.active}
+                    direction="up"
+                    containerStyle={{}}
+                    style={{ backgroundColor: '#5067FF' }}
+                    position="bottomRight"
+                    onPress={() => this.setState({ active: !this.state.active })}>
+                    <Icon type="MaterialIcons" name='add' />
+                    <Button style={{ backgroundColor: '#34A34F' }} onPress={() => { this.props.navigation.navigate("Add") }}>
+                        <Icon type="MaterialIcons" name='note' />
+                    </Button>
+                    <Button style={{ backgroundColor: '#3B5998' }} onPress={() => { this.props.navigation.navigate("Chat") }}>
+                        <Icon type="MaterialIcons" name='mic-none' />
+                    </Button>
+                    <Button disabled style={{ backgroundColor: '#DD5144' }}>
+                        <Icon type="MaterialIcons" name='camera-alt' />
+                    </Button>
+                </Fab>
+            </Container>
 
         );
     }
