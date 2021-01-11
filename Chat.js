@@ -928,7 +928,7 @@ function getRandomInt(max) {
 }
 
 
-class MainScreen extends Component {
+export default class Chat extends Component {
 
     constructor(props) {
         super(props);
@@ -1121,10 +1121,11 @@ class MainScreen extends Component {
 
     async addMessage(content) {
         let a = content.concat(this.state.messages);
-        this.setState({ messages: a });
         for (let i of content) {
             this.handleChange("description", information.description = information.description + "\nYou: " + i.text)
-            a = (await this.generateMessage(i.text, content)).concat(a);
+            let newInfo = await this.generateMessage(i.text, content)
+            if(newInfo) a = newInfo.concat(a);
+            else return;
         }
         this.setState({ messages: a });
     }
@@ -1136,35 +1137,17 @@ class MainScreen extends Component {
         const response = await this.state.manager.process(lang, input, this.state.context);
 
 
-
-        // this.props.changeTemp('date', this.state.date);//Date object
-
-        // this.props.changeTemp("income", "Income");//intent
-
-
-        // this.props.changeTemp("category", this.props.category.Income[0]);
-
-        // this.props.changeTemp("amount", parseFloat(event.nativeEvent.text))
-
-
-
-        // this.props.changeTemp("title", k.Title);
-
-        // this.props.changeTemp("description", "   ");
-
-
         let entities = []
         for (let i of response.entities) {
             entities.push(this.handleEntity(i, response.intent))
         }
+        console.log(response.intent);
 
-        //update category
-        if (information.hasOwnProperty("income") && information.hasOwnProperty("date")) {
-            this.handleChange("title", (information.income ? "Income" : "Expense") + " at " + information.date.toLocaleString())
-        }
+
 
         //once done
         if (Object.keys(information).length >= 6) {
+            console.log("Done")
             let a = source.concat(this.state.messages);
             message.push({
                 _id: UniqueID++,
@@ -1180,33 +1163,36 @@ class MainScreen extends Component {
 
             this.handleChange("description", information.description = information.description + "\nR: " + "All information is added, direct you back to home screen soon")
             this.props.functions(this.props.navigation)
+            return null;
         }
 
         let toReply = "";
 
         if (response.intent.includes("income")) {
+            this.handleChange('income', true)
             toReply = "An income is detected " + this.concatEntity(entities);
         } else if (response.intent.includes("expense")) {
+            this.handleChange('income', false)
             toReply = "An expense is detected " + this.concatEntity(entities);
         } else {
             toReply = response.answer + "\n" + this.concatEntity(entities);
         }
 
-        message.push({
-            _id: UniqueID++,
-            text: toReply,
-            createdAt: new Date(),
-            user: {
-                _id: 2,
-                name: 'Robot'
-            },
-        })
+        //update category
+        if (information.hasOwnProperty("income") && information.hasOwnProperty("date")) {
+            this.handleChange("title", (information.income ? "Income" : "Expense") + " at " + information.date.toLocaleString())
+        }
+
 
         this.handleChange("description", information.description = information.description + "\nR: " + toReply)
 
-        for (let i of remains) {
-            if (information.hasOwnProperty(i)) remains.splice(remains.indexOf(i), 1)
+        let newRemain = [];
+        for (let i of ["date", "income", "description", "category", "amount", "title"]) {
+            if (!information.hasOwnProperty(i)) newRemain.push(i)
         }
+        remains = newRemain;
+        console.log(remains)
+
 
         let remainReply = "I still need more information, " + this.handleRemaining();
 
@@ -1220,20 +1206,24 @@ class MainScreen extends Component {
             },
         })
 
+
+        message.push({
+            _id: UniqueID++,
+            text: toReply,
+            createdAt: new Date(),
+            user: {
+                _id: 2,
+                name: 'Robot'
+            },
+        })
+
         this.handleChange("description", information.description = information.description + "\nR: " + remainReply)
 
         return message
     }
 
-    // this.props.changeTemp('date', this.state.date);//Date object
-
-    // this.props.changeTemp("income", "Income");//intent
-
-
-    // this.props.changeTemp("category", this.props.category.Income[0]);
-
-    // this.props.changeTemp("amount", parseFloat(event.nativeEvent.text))
     handleRemaining() {
+        if(remains.length<=0) return;
         let infoCase = remains[getRandomInt(remains.length)]
         while (infoCase.includes("title")) infoCase = remains[getRandomInt(remains.length)]
         switch (infoCase) {
@@ -1248,19 +1238,19 @@ class MainScreen extends Component {
                 if (Math.random() < 0.3)
                     return "Did you earn or spend any money?"
                 else if (Math.random() < 0.5)
-                    return "Is it your income?"
+                    return "As for this case, any income or expense happened?"
                 else
-                    return "Does this belong to income?"
+                    return "Does this belong to income? answer income if it is, or expense if it is not"
             case "category":
                 if (information.hasOwnProperty("income")) {
-                    return "Which category does this belong to? you may choose in " + information.income ? this.props.category.Income.toString() : this.props.category.Expense.toString()
+                    return "Which category does this belong to? you may choose in " + (information.income ? this.props.category.Income.toString() : this.props.category.Expense.toString())
                 } else {
                     if (Math.random() < 0.3)
                         return "Did you earn or spend any money?"
                     else if (Math.random() < 0.5)
-                        return "Is it your income?"
+                        return "As for this case, any income or expense happened?"
                     else
-                        return "Does this belong to income?"
+                        return "Does this belong to income? answer income if it is, or expense if it is not"
                 }
             case "amount":
                 if (information.hasOwnProperty("income")) {
@@ -1269,9 +1259,9 @@ class MainScreen extends Component {
                     if (Math.random() < 0.3)
                         return "Did you earn or spend any money?"
                     else if (Math.random() < 0.5)
-                        return "Is it your income?"
+                        return "As for this case, any income or expense happened?"
                     else
-                        return "Does this belong to income?"
+                        return "Does this belong to income? answer income if it is, or expense if it is not"
                 }
             default:
                 return "Dead end!"
@@ -1299,6 +1289,12 @@ class MainScreen extends Component {
 
     // this.props.changeTemp("title", k.Title);
     handleEntity(SourceObj, intentName) {
+        if (intentName.includes("income")) {
+            this.handleChange('income', true)
+        }
+        if (intentName.includes("expense")) {
+            this.handleChange('income', false)
+        }
         switch (SourceObj.entity) {
             case "currency":
                 this.handleChange("amount", SourceObj.resolution.value)
@@ -1326,7 +1322,7 @@ class MainScreen extends Component {
                 return null;
             case "categoryExpense":
                 if (intentName.includes("expense")) {
-                    this.handleChange('income', true)
+                    this.handleChange('income', false)
                     this.handleChange('category', SourceObj.option)
                     return "it belongs to category" + SourceObj.option;
                 } else if (!information.income) {
@@ -1341,10 +1337,10 @@ class MainScreen extends Component {
 
     handleChange(key, value) {
         information[key] = value;
-        this.props.changeTemp(key, value);
+        if(key.localeCompare("income") === 0)
+            this.props.changeTemp(key, (value ? "Income" : "Expense"));
+        else this.props.changeTemp(key, value);
     }
-
-
 
     handleAddContent(manager) {
         for (let i of corpus) {
@@ -1360,6 +1356,7 @@ class MainScreen extends Component {
         //     "Income": ["Salary"],
         //     "Expense": ["Normal", "Emergent"]
         //   };
+
 
         for (let i of this.props.category.Income) {
             manager.addNamedEntityText(
@@ -1422,10 +1419,4 @@ class MainScreen extends Component {
         );
     }
 
-}
-
-export default function Chat() {
-    return (
-        <MainScreen />
-    );
 }

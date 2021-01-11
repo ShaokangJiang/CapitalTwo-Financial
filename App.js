@@ -57,7 +57,7 @@ class MainScreen extends Component {
 
   changeTemp(key, value) {
     tempObj[key] = value;
-    //console.log(tempObj);
+    console.log(tempObj);
     if (key.localeCompare("date") === 0 && origDate.localeCompare("") === 0) {
       //console.log(typeof value)
       origDate = new Date(value).toLocaleDateString()
@@ -368,7 +368,7 @@ class MainScreen extends Component {
               {(props) =>
                 <StyleProvider style={getTheme(this.state.theme === 'dark' ? materialDark : material)}>
 
-                  <Chat {...props} data={tempObj} changeTemp={this.changeTemp} functions={this.handleAddItem} category={this.state.category} />
+                  <Chat {...props} data={this.state.data} changeTemp={this.changeTemp} functions={this.handleAddItem} category={this.state.category} />
                 </StyleProvider>}
             </Stack.Screen>
 
